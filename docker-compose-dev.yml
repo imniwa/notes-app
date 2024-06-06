@@ -1,0 +1,88 @@
+networks:
+  notes:
+    ipam:
+      config:
+        - subnet: 172.20.148.0/24
+        
+services:
+  proxy:
+    container_name: notes_proxy
+    build: 
+      context: ./nginx
+      dockerfile: Dockerfile
+    environment:
+      CLIENT_PORT: ${CLIENT_PORT}
+      API_PORT: ${API_PORT}
+    ports: 
+      - 80:80
+    networks:
+      - notes
+    depends_on:
+      - client
+      - api
+
+  client:
+    container_name: notes_client
+    build: 
+      context: ./client
+      dockerfile: Dockerfile.dev
+    environment:
+      CLIENT_PORT: ${CLIENT_PORT}
+      API_PORT: ${API_PORT}
+      API_PATHNAME: ${API_PATHNAME}
+      SECRET: ${SECRET}
+    develop:
+      watch:
+        - action: sync
+          path: ./client
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: package.json
+    networks:
+      - notes
+
+  api:
+    container_name: notes_api
+    build: 
+      context: ./api
+      dockerfile: Dockerfile.dev
+    environment:
+      HOST: api
+      PORT: ${API_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      JWT_SECRETS: ${SECRET}
+    develop:
+      watch:
+        - action: sync
+          path: ./api
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: package.json
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - notes
+
+  database:
+    container_name: notes_db
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${DB_USER} -d ${DB_NAME}'"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - notes

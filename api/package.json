@@ -1,0 +1,28 @@
+{
+  "name": "api-todo-list",
+  "version": "1.0.50",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "NODE_ENV=production bun src/index.ts",
+    "migrate:generate": "bun drizzle-kit generate:pg",
+    "migrate": "bun run src/migrate.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@bogeychan/elysia-logger": "^0.0.20",
+    "@elysiajs/bearer": "^1.0.2",
+    "@elysiajs/cors": "^1.0.2",
+    "@elysiajs/jwt": "^1.0.2",
+    "@elysiajs/swagger": "^1.0.3",
+    "dotenv-extended": "^2.9.0",
+    "drizzle-orm": "^0.30.5",
+    "elysia": "latest",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.4",
+    "bun-types": "latest",
+    "drizzle-kit": "^0.20.14"
+  },
+  "module": "src/index.js"
+}

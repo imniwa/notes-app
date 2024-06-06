@@ -1,0 +1,21 @@
+server {
+    listen 80;
+    listen [::]:80;
+
+    location / {
+        proxy_pass http://client:$CLIENT_PORT;    
+        proxy_set_header X-Real-IP ${X}remote_addr;
+        proxy_set_header X-Forwarded-Proto ${X}scheme;
+        proxy_set_header X-Forwarded-Host ${X}host;
+        proxy_set_header X-Forwarded-Port ${X}server_port;
+        proxy_set_header Upgrade ${X}http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_read_timeout 86400;
+        proxy_http_version 1.1;
+    }
+
+    location /api {
+        proxy_pass http://api:$API_PORT;
+        proxy_http_version 1.1;
+    }
+}

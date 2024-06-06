@@ -1,0 +1,12 @@
+FROM oven/bun:1.1.12-alpine as base
+
+RUN addgroup -S appgroup && adduser -S app -G appgroup
+USER app
+
+WORKDIR /app
+COPY package.json bun.lockb ./
+RUN bun install
+
+COPY --chown=app:app . /app
+RUN chmod 755 /app/migration.sh
+CMD ["/bin/sh", "-c", "./migration.sh && bun dev"]
