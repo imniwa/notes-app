@@ -8,4 +8,5 @@ COPY package.json ./
 RUN npm install
 
 COPY --chown=app:app . /app
+RUN echo SECRET=$(echo \$RANDOM | md5sum | head -c 10; echo;) > .env
 CMD npx next dev -H client -p $CLIENT_PORT
