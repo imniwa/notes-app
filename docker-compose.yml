@@ -1,10 +1,15 @@
 networks:
-  notes:
+  network:
+  notes_internal_network:
+    name: notes_internal_network
+    internal: true
+    driver: ipvlan
     ipam:
       config:
         - subnet: 172.20.148.0/24
+
 services:
-  nginx:
+  proxy:
     container_name: notes_proxy
     build: 
       context: ./nginx
@@ -15,10 +20,11 @@ services:
     ports: 
       - 80:80
     networks:
-      - notes
+      - network
+      - notes_internal_network
     depends_on:
-      - client
       - api
+      - client
 
   client:
     container_name: notes_client
@@ -29,9 +35,9 @@ services:
       CLIENT_PORT: ${CLIENT_PORT}
       API_PORT: ${API_PORT}
       API_PATHNAME: ${API_PATHNAME}
-      SECRET: ${SECRET}
     networks:
-      - notes
+      - network
+      - notes_internal_network
 
   api:
     container_name: notes_api
@@ -39,18 +45,19 @@ services:
       context: ./api
       dockerfile: Dockerfile
     environment:
+      HOST: api
       PORT: ${API_PORT}
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
       DB_NAME: ${DB_NAME}
-      JWT_SECRETS: ${SECRET}
+    networks:
+      - notes_internal_network
     depends_on:
       database:
         condition: service_healthy
-    networks:
-      - notes
+        restart: true
 
   database:
     container_name: notes_db
@@ -65,4 +72,4 @@ services:
       timeout: 3s
       retries: 3
     networks:
-      - notes
+      - notes_internal_network

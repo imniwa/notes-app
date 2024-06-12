@@ -1,9 +1,13 @@
 networks:
-  notes:
+  network:
+  notes_internal_network:
+    name: notes_internal_network
+    internal: true
+    driver: ipvlan
     ipam:
       config:
         - subnet: 172.20.148.0/24
-        
+
 services:
   proxy:
     container_name: notes_proxy
@@ -16,10 +20,11 @@ services:
     ports: 
       - 80:80
     networks:
-      - notes
+      - network
+      - notes_internal_network
     depends_on:
-      - client
       - api
+      - client
 
   client:
     container_name: notes_client
@@ -30,7 +35,8 @@ services:
       CLIENT_PORT: ${CLIENT_PORT}
       API_PORT: ${API_PORT}
       API_PATHNAME: ${API_PATHNAME}
-      SECRET: ${SECRET}
+    networks:
+      - notes_internal_network
     develop:
       watch:
         - action: sync
@@ -40,8 +46,6 @@ services:
             - node_modules/
         - action: rebuild
           path: package.json
-    networks:
-      - notes
 
   api:
     container_name: notes_api
@@ -56,7 +60,12 @@ services:
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
       DB_NAME: ${DB_NAME}
-      JWT_SECRETS: ${SECRET}
+    networks:
+      - notes_internal_network
+    depends_on:
+      database:
+        condition: service_healthy
+        restart: true
     develop:
       watch:
         - action: sync
@@ -66,11 +75,6 @@ services:
             - node_modules/
         - action: rebuild
           path: package.json
-    depends_on:
-      database:
-        condition: service_healthy
-    networks:
-      - notes
 
   database:
     container_name: notes_db
@@ -85,4 +89,4 @@ services:
       timeout: 3s
       retries: 3
     networks:
-      - notes
+      - notes_internal_network
